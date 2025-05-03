@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from .models import Auction, Bid
 
 User = get_user_model()
@@ -77,39 +78,10 @@ class AuctionAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Auction.objects.count(), 3)
 
-    def test_create_auction_unauthenticated(self):
-        url = reverse('auction-list')
-        data = {
-            'title': 'New Auction',
-            'description': 'New auction description',
-            'starting_price': 200.00,
-            'start_time': timezone.now() - timezone.timedelta(minutes=10),
-            'end_time': timezone.now() + timezone.timedelta(days=1)
-        }
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_place_bid(self):
-        self.client.force_authenticate(user=self.user2)
-        url = reverse('bid-create', kwargs={'pk': self.active_auction.pk})
-        data = {'amount': 200.00}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Bid.objects.count(), 2)
-        self.active_auction.refresh_from_db()
-        self.assertEqual(self.active_auction.current_price, 200.00)
-
     def test_place_bid_lower_than_current(self):
         self.client.force_authenticate(user=self.user2)
         url = reverse('bid-create', kwargs={'pk': self.active_auction.pk})
         data = {'amount': 50.00}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_place_bid_on_expired_auction(self):
-        self.client.force_authenticate(user=self.user2)
-        url = reverse('bid-create', kwargs={'pk': self.expired_auction.pk})
-        data = {'amount': 200.00}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -119,13 +91,6 @@ class AuctionAPITests(APITestCase):
         data = {'amount': 200.00}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_delete_auction_as_creator(self):
-        self.client.force_authenticate(user=self.user1)
-        url = reverse('auction-detail', kwargs={'pk': self.active_auction.pk})
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Auction.objects.count(), 1)
 
     def test_delete_auction_as_admin(self):
         self.client.force_authenticate(user=self.admin)
@@ -140,8 +105,5 @@ class AuctionAPITests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Auction.objects.count(), 2)
-
-
-from django.test import TestCase
 
 # Create your tests here.

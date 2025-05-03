@@ -1,12 +1,12 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+
 from .models import Auction, Bid
+from .permissions import IsCreatorOrReadOnly, IsAdminOrReadOnly
 from .serializers import (
     AuctionSerializer, BidSerializer,
     CreateAuctionSerializer, CreateBidSerializer
 )
-from django.utils import timezone
-from .permissions import IsCreatorOrReadOnly, IsAdminOrReadOnly
 
 
 class AuctionListCreateView(generics.ListCreateAPIView):
@@ -85,6 +85,7 @@ class UserBidsListView(generics.ListAPIView):  # Fixed typo: generics (not gener
 
     def get_queryset(self):
         return Bid.objects.filter(bidder=self.request.user)
+
 
 class UserAuctionsListView(generics.ListAPIView):
     serializer_class = AuctionSerializer

@@ -4,6 +4,7 @@ from django.utils import timezone
 
 User = get_user_model()
 
+
 class Auction(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -29,6 +30,7 @@ class Auction(models.Model):
         if self.end_time <= timezone.now() and self.is_active:
             self.is_active = False
             self.save()
+
 
 class Bid(models.Model):
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='bids')
